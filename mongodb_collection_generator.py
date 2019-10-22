@@ -1,7 +1,7 @@
 print('''
-Генератор небольших MongoDB-коллекций случайных данных.
+Генератор небольших MongoDB-коллекций случайных значений.
 Автор: Платон Быкадоров (platon.work@gmail.com), 2019.
-Версия: V1.0.
+Версия: V2.0.
 Лицензия: GNU General Public License version 3.
 Поддержать автора: https://money.yandex.ru/to/41001832285976
 
@@ -36,7 +36,7 @@ https://api.mongodb.com/python/current/
 
 from pymongo import MongoClient, IndexModel, ASCENDING
 from random import randint, choice
-from string import ascii_letters, digits
+from string import ascii_letters, digits, ascii_lowercase
 from bson.decimal128 import Decimal128
 from decimal import Decimal, ROUND_HALF_UP
 from pprint import pprint
@@ -44,20 +44,24 @@ from pprint import pprint
 #Подключение к MongoDB-серверу.
 client = MongoClient(compressors='zstd')
 
-#Создание базы и коллекции (если они ещё не созданы).
+#Создание базы и коллекции
+#(если они ещё не созданы).
 random_db = client.random_db
 random_coll = random_db.random_coll
 
-#Если коллекция уже есть, то будет удалена.
+#Если коллекция, полученная
+#при предыдущих запусках,
+#уже есть, то будет удалена.
 if 'random_coll' in random_db.collection_names():
         random_coll.drop()
         
 #Генерация списка словарей с
-#данными трёх типов по как можно
-#более заковыристым правилам:).
-fragment = [{'integers': randint(1, 99),
-             'strings': ''.join([choice(ascii_letters + digits) for j in range(randint(5, 9))]),
-             'decimals': Decimal128((Decimal(randint(1, 49)) / Decimal(randint(50, 99))).quantize(Decimal('1.' + '0' * randint(1, 4)), ROUND_HALF_UP))} for i in range(randint(10, 49))]
+#данными разных типов как можно
+#более заковыристым способом:).
+fragment = [{'integer': randint(0, 100),
+             'string': ''.join([choice(ascii_letters + digits) for j in range(randint(1, 10))]),
+             'decimal': Decimal128((Decimal(randint(1, 49)) / Decimal(randint(50, 100))).quantize(Decimal('1.' + '0' * randint(1, 5)), ROUND_HALF_UP)),
+             'list': [choice([''.join([choice(ascii_lowercase) for k in range(randint(1, 5))]), randint(-10000, 10000)]) for j in range(randint(1, 5))]} for i in range(randint(10, 50))]
 
 #Размещение этого списка в коллекцию.
 random_coll.insert_many(fragment)
@@ -73,14 +77,16 @@ print('\nДанные:')
 for doc in random_coll.find():
         pprint(doc)
         print('')
-
+        
 print('''
 Код испытания счастья:).
-Чем больше раз выведется число,
-тем больше вам повезло.
+Вывелось число - повезло.
+Вывелось число более,
+чем один раз за один
+запрос - супервезение:).
 
-for doc in random_coll.find({'integers': randint(1, 99)}):
-        pprint(doc['integers'])
+for doc in random_coll.find({'integer': randint(0, 100)}):
+        pprint(doc['integer'])
 ''')
 
 #client.close()
